@@ -1,9 +1,8 @@
-import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import Svg, {Path} from 'react-native-svg';
 
 const MusicNote: React.FC<{name?: string}> = ({name}) => {
-  if (name == '1') {
+  if (name === '1') {
     return (
       <Svg width="86" height="180" viewBox="0 0 86 180" fill="none">
         <Path d="M58 0H56V82H58V0Z" fill="black" />
@@ -13,7 +12,7 @@ const MusicNote: React.FC<{name?: string}> = ({name}) => {
         />
       </Svg>
     );
-  } else if (name == '2') {
+  } else if (name === '2') {
     return (
       <Svg width="86" height="156" viewBox="0 0 86 156" fill="none">
         <Path
@@ -28,5 +27,3 @@ const MusicNote: React.FC<{name?: string}> = ({name}) => {
 };
 
 export default MusicNote;
-
-const styles = StyleSheet.create({});

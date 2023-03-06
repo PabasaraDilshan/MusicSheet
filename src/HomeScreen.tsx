@@ -2,36 +2,37 @@ import {
   Alert,
   Button,
   DeviceEventEmitter,
-  EventEmitter,
-  NativeEventEmitter,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React, {useRef} from 'react';
-import {PanGestureHandler} from 'react-native-gesture-handler';
+import React from 'react';
 import Animated, {
-  runOnJS,
-  useAnimatedGestureHandler,
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
 import MusicSheet from './MusicSheet';
-import MusicNote from './MusicNote';
+import DraggableMusicNote from './DraggableMusicNote';
 
 // const lst = ['1', '2'];
 const HomeScreen = () => {
   const boxPosX = useSharedValue(100);
   const boxPosY = useSharedValue(100);
-  const [notes, setNotes] = React.useState([{name: '1'}, {name: '2'}]);
+  const circPositionX = useSharedValue(0);
+  const circPositionY = useSharedValue(0);
+  const initialCircPosX = useSharedValue(0);
+  const initialCircPosY = useSharedValue(0);
+  const col1BG = useSharedValue('');
+  const col2BG = useSharedValue('');
+  const col3BG = useSharedValue('');
+  const col4BG = useSharedValue('');
+  const [notes, _] = React.useState([{name: '1'}]);
   // let posEv = new EventEmitter();
   // posEv.addListener('pos', v => {
   //   console.log(v);
   // });
   const [notePoses, setnotePoses] = React.useState([
     {correctPos: [1, 1], currentPose: [-1, -1]},
-    {correctPos: [2, 1], currentPose: [-1, -1]},
   ]);
 
   React.useEffect(() => {
@@ -43,7 +44,26 @@ const HomeScreen = () => {
       });
     });
   }, []);
-
+  const col1Style = useAnimatedStyle(() => {
+    return {
+      backgroundColor: col1BG.value,
+    };
+  });
+  const col2Style = useAnimatedStyle(() => {
+    return {
+      backgroundColor: col2BG.value,
+    };
+  });
+  const col3Style = useAnimatedStyle(() => {
+    return {
+      backgroundColor: col3BG.value,
+    };
+  });
+  const col4Style = useAnimatedStyle(() => {
+    return {
+      backgroundColor: col4BG.value,
+    };
+  });
   // const _onBoxPanHandlerStateChange = useAnimatedGestureHandler({
   //   onStart: (_, ctx: any) => {},
   //   onActive: (event, ctx) => {
@@ -58,102 +78,82 @@ const HomeScreen = () => {
 
   return (
     <Animated.View style={styles.container}>
+      <Text style={styles.title}>Place the note on the staff</Text>
       <Animated.View
         onLayout={event => {
-          console.log(event.nativeEvent.layout);
           boxPosX.value = event.nativeEvent.layout.x;
           boxPosY.value = event.nativeEvent.layout.y;
         }}
         style={styles.box}>
-        <MusicSheet />
+        <MusicSheet styles={[col1Style, col2Style, col3Style, col4Style]} />
       </Animated.View>
-
-      {notes.map((ele, ind) => {
-        const circPositionX = useSharedValue(200);
-        const circPositionY = useSharedValue(200);
-        const rowVal = useSharedValue(-1);
-        const colVal = useSharedValue(-1);
-        const mNoteRef = useRef<Animated.View | null>(null);
-
-        const DemitterWrapper = (arg1: any, arg2: any) => {
-          DeviceEventEmitter.emit(arg1, arg2);
-        };
-        const _onPanHandlerStateChange = useAnimatedGestureHandler({
-          onStart: (_, ctx: any) => {
-            //   console.log(ctx);
-            ctx.startX = circPositionX.value;
-            ctx.startY = circPositionY.value;
-          },
-          onActive: (event, ctx) => {
-            circPositionX.value = ctx.startX + event.translationX;
-            circPositionY.value = ctx.startY + event.translationY;
-          },
-          onEnd: (_, ctx) => {
-            if (circPositionY.value - boxPosY.value < 150) {
-              // console.log(circPositionY.value);
-              // console.log(boxPosY.value);
-              // console.log(circPositionY.value);
-              // mNoteRef.current?.measure((x,y,w,h)=>{
-              //   console.log(y);
-              // })
-              circPositionY.value =
-                circPositionY.value -
-                (a => (a < 6 ? a : a - 12))(
-                  (circPositionY.value - boxPosY.value) % 12,
-                );
-
-              circPositionX.value =
-                circPositionX.value -
-                (a => (a < 43 ? a : a - 86))(
-                  (circPositionX.value - boxPosX.value) % 86,
-                );
-              rowVal.value = Math.floor(
-                (circPositionY.value - boxPosY.value) / 12,
-              );
-              colVal.value = Math.floor(
-                (circPositionX.value - boxPosX.value) / 86,
-              );
-              runOnJS(DemitterWrapper)('pos', {
-                id: ind,
-                curRow: rowVal.value,
-                curCol: colVal.value,
-              });
-              // setnotePoses(ntPoses=>{
-              //   ntPoses[ind].correctPos = [rowVal.value,colVal.value]
-
-              //   return [...ntPoses];
-              // })
-            } else {
-              circPositionY.value = 100;
+      <Animated.View
+        style={styles.placeholderContainer}
+        onLayout={event => {
+          console.log(event.nativeEvent.layout);
+          circPositionX.value =
+            event.nativeEvent.layout.x +
+            (event.nativeEvent.layout.width - 86) / 2;
+          circPositionY.value = event.nativeEvent.layout.y;
+          initialCircPosX.value =
+            event.nativeEvent.layout.x +
+            (event.nativeEvent.layout.width - 86) / 2;
+          initialCircPosY.value = event.nativeEvent.layout.y;
+        }}>
+        <Animated.View style={styles.placeholder} />
+        <Text style={styles.noteName}>Note Name Testing</Text>
+      </Animated.View>
+      {notes.map((ele, ind) => (
+        <DraggableMusicNote
+          id={ind}
+          data={ele}
+          boxPosX={boxPosX}
+          boxPosY={boxPosY}
+          circPositionX={circPositionX}
+          circPositionY={circPositionY}
+          initialCircPosX={initialCircPosX}
+          initialCircPosY={initialCircPosY}
+          onHoverNote={index => {
+            'worklet';
+            console.log(index);
+            switch (index) {
+              case 0:
+                col1BG.value = '#C8C8C8';
+                col2BG.value = 'white';
+                col3BG.value = 'white';
+                col4BG.value = 'white';
+                break;
+              case 1:
+                col1BG.value = 'white';
+                col2BG.value = '#C8C8C8';
+                col3BG.value = 'white';
+                col4BG.value = 'white';
+                break;
+              case 2:
+                col1BG.value = 'white';
+                col2BG.value = 'white';
+                col3BG.value = '#C8C8C8';
+                col4BG.value = 'white';
+                break;
+              case 3:
+                col1BG.value = 'white';
+                col2BG.value = 'white';
+                col3BG.value = 'white';
+                col4BG.value = '#C8C8C8';
+                break;
+              case -1:
+                col1BG.value = 'white';
+                col2BG.value = 'white';
+                col3BG.value = 'white';
+                col4BG.value = 'white';
+                break;
+              default:
+                break;
             }
-          },
-        });
-        const animatedRootStyles = useAnimatedStyle(() => {
-          return {
-            // transform: [
-            //   {translateX: circPositionX.value},
-            //   {translateY: circPositionY.value},
-            // ],
-            top: circPositionY.value,
-            left: circPositionX.value,
-          };
-        });
-        return (
-          <PanGestureHandler
-            key={ind}
-            onHandlerStateChange={_onPanHandlerStateChange}>
-            <Animated.View
-              ref={mNoteRef}
-              onLayout={event => {
-                // circPositionY.value = event.nativeEvent.layout.y;
-                // console.log(event.nativeEvent.layout.y)
-              }}
-              style={[styles.circle, animatedRootStyles]}>
-              <MusicNote name={ele.name} />
-            </Animated.View>
-          </PanGestureHandler>
-        );
-      })}
+          }}
+          key={ind}
+        />
+      ))}
 
       <View style={styles.actionBtn}>
         <Button
@@ -174,15 +174,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  circle: {
-    // width: 50,
-    // height: 50,
-    // borderRadius: 25,
-    //backgroundColor: 'blue',
-    position: 'absolute',
-  },
   box: {
-    top: 100,
+    marginTop: 20,
     alignSelf: 'center',
     //backgroundColor: 'red',
   },
@@ -191,5 +184,21 @@ const styles = StyleSheet.create({
     bottom: 50,
     left: 30,
     right: 30,
+  },
+  placeholderContainer: {
+    marginTop: 30,
+    alignSelf: 'center',
+  },
+  placeholder: {
+    width: 86,
+    height: 180,
+    backgroundColor: '#C8C8C8',
+    alignSelf: 'center',
+    borderRadius: 10,
+  },
+  noteName: {alignSelf: 'center'},
+  title: {
+    fontSize: 30,
+    padding: 10,
   },
 });
